@@ -37,7 +37,7 @@ class SystemException(Exception):
     def __init__(self, cmd, error):
         self.cmd = cmd
         self.error = error
-        
+
     def __str__(self):
         return "Error %s got when executed '%s'" % (self.error, self.cmd)
 
@@ -48,9 +48,9 @@ def sh(cmd):
     result = os.system(cmd)
     if result > 0:
         raise SystemException(cmd, result)
-    
+
 def cd(dirname):
-    os.chdir(dirname)   
+    os.chdir(dirname)
 
 
 class CodeRepository(object):
@@ -72,7 +72,7 @@ class CodeRepository(object):
 
     def clone(self):
         pass
-            
+
     def pull(self):
         if not os.path.exists(self.directory):
             self.clone()
@@ -82,14 +82,14 @@ class CodeRepository(object):
         self.pull_additional = f
         return self
 
- 
+
 class GitRepository(CodeRepository):
 
     def pull(self):
         super(GitRepository, self).pull()
         sh("git pull")
         self.pull_additional()
-        
+
     def switch_additional(self, branch):
         pass
 
@@ -97,7 +97,7 @@ class GitRepository(CodeRepository):
         super(GitRepository, self).switch_branch(branch)
         sh("git checkout %s" % (branch,))
         self.switch_additional(branch)
-        
+
     def clone(self):
         sh("git clone %s %s" % (self.url, self.directory))
 
@@ -106,7 +106,7 @@ class HgRepository(CodeRepository):
     def pull(self):
         super(HgRepository, self).pull()
         sh("hg pull; hg update")
-        
+
     def clone(self):
         sh("hg clone %s %s" % (self.url, self.directory))
 
@@ -115,22 +115,22 @@ PyGobstonesLangRepo = GitRepository("PyGobstones-Lang",
                                 PYGBSLANG_DIR,
                                 ["pygobstoneslang"])
 
-PyGobstonesRepo = GitRepository("PyGobstones", 
+PyGobstonesRepo = GitRepository("PyGobstones",
                                 PYGBS_REPO_URL,
-                                PYGBS_DIR, 
-                                ["pygobstones", 
-                                 "examples", 
+                                PYGBS_DIR,
+                                ["pygobstones",
+                                 "examples",
                                  "pygobstoneslang",
-                                 "pygobstones.py", 
+                                 "pygobstones.py",
                                  "LICENSE",
                                  "README.md",
                                  "docs",
                                  "AUTHORS",
                                 ]).set_pull_additional(lambda:sh('cp %s/pygobstoneslang %s/ -R' % (PYGBSLANG_DIR, PYGBS_DIR)))
-                                
+
 # Order matters
 REPOSITORIES = [
-    PyGobstonesLangRepo, 
+    PyGobstonesLangRepo,
     PyGobstonesRepo
 ]
 
@@ -157,7 +157,7 @@ def version_dir(branch_name):
         branch_info = "-%s" % (branch_name,)
     return BIN_DIR + "/v" + version_num() + branch_info
 
-def deploy(version, branch_name):    
+def deploy(version, branch_name):
     if os.path.exists(version_dir(branch_name)):
         sh("rm %s -rf" % (version_dir(branch_name),))
     sh("mkdir " + version_dir(branch_name))
@@ -166,12 +166,12 @@ def deploy(version, branch_name):
     #XGobstonesRepo.deploy_to(version_dir(branch_name) + "/interpreter/vxgbs")
     cd(DEPLOY_DIR)
     sh("cp %s %s/changelog.txt" % (CHANGELOG_FILE, version_dir(branch_name),))
-    sh("echo %s > %s/pygobstones/version" % (".".join(version), version_dir(branch_name)))    
-    
+    sh("echo %s > %s/pygobstones/version" % (".".join(version), version_dir(branch_name)))
+
 def pack_deploy(version, branch_name):
     cd(version_dir(branch_name))
     sh("zip -r %s.zip ./" % (ZIP_DIR + "/" + package_name(version, branch_name),))
-    sh("tar -zcvf %s.tar.gz ./" % (ZIP_DIR + "/" + package_name(version, branch_name),))    
+    sh("tar -zcvf %s.tar.gz ./" % (ZIP_DIR + "/" + package_name(version, branch_name),))
 
 def readlines(filename):
     f = open(filename)
@@ -209,9 +209,9 @@ def ask_changelog_info(version, branch):
     os.system("vim " + CHANGELOG_FILE)
 
 def push_deployment_script(version):
-    cd(DEPLOY_DIR)    
-    sh("hg commit -m 'New version %s' -u arypbatista" % (".".join(version),))
-    sh("hg push")
+    cd(DEPLOY_DIR)
+    sh("git commit --message 'New version %s' -u arypbatista" % (".".join(version),))
+    sh("git push")
 
 def increase_version(version, options):
     part = 1
@@ -226,28 +226,28 @@ def increase_version(version, options):
 
 def get_version_part(part):
     return int(version[part])
-    
+
 def set_version_part(part, value):
     version[part] = str(value)
 
-def increase_version_part(part):        
+def increase_version_part(part):
     set_version_part(part, get_version_part(part)+1)
 
 def build_deb(version, branch_name):
     if os.path.isdir(DEB_TMP_DIR):
         sh("rm %s -rf" % (DEB_TMP_DIR,))
     sh("mkdir %s" % (DEB_TMP_DIR,))
-    sh("cp %s %s -R" % (version_dir(branch_name), DEB_TMP_DIR + "/" + package_name(version, branch_name),))    
-    cd(DEB_TMP_DIR)    
+    sh("cp %s %s -R" % (version_dir(branch_name), DEB_TMP_DIR + "/" + package_name(version, branch_name),))
+    cd(DEB_TMP_DIR)
     sh("cp ../setup.py ./%s" % (package_name(version, branch_name),))
     sh("cp ../pygobstones.desktop ./%s" % (package_name(version, branch_name),))
     sh("tar -zcf %s.tar.gz %s" % (package_name(version, branch_name), package_name(version, branch_name)) )
     sh("py2dsc -m 'Ary Pablo Batista <arypbatista@gmail.com>' %s.tar.gz" % (package_name(version, branch_name),))
-    log_info("Copying deb_dist_files.")    
-    sh("cp ../deb_dist_files/* deb_dist/%s/debian/" % (package_name(version, branch_name),))    
+    log_info("Copying deb_dist_files.")
+    sh("cp ../deb_dist_files/* deb_dist/%s/debian/" % (package_name(version, branch_name),))
     cd("deb_dist/%s/" % (package_name(version, branch_name),))
-    log_info("Finally building deb.")    
-    sh("debuild")    
+    log_info("Finally building deb.")
+    sh("debuild")
     cd(DEB_DIR)
     sh("cp %s/deb_dist/%s-1_all.deb %s/versions/" % (DEB_TMP_DIR, package_name(version, branch_name).replace("-","_"), DEB_DIR))
 
@@ -276,7 +276,7 @@ def main(args, options):
             build_deb(version)
         else:
             change_version(version, options)
-            checkout_branch(options['branch'])            
+            checkout_branch(options['branch'])
             if options['pull']:
                 log_info("Pulling changes...")
                 pull_changes()
@@ -284,17 +284,17 @@ def main(args, options):
             if options['changelog']:
                 ask_changelog_info(version, options['branch'])
             log_info("Deploying new version (v%s)" % (".".join(version),))
-            deploy(version, options['branch'])    
+            deploy(version, options['branch'])
             pack_deploy(version, options['branch'])
             log_info("Pushing deployment script.")
             save_version(version)
             push_deployment_script(version)
-            log_info("Deployment complete.")        
+            log_info("Deployment complete.")
 
 
 """
     Argument parsing
-""" 
+"""
 def default_options(option_switches, defaults):
     opt = {}
     for o in option_switches:
@@ -311,7 +311,7 @@ def default_options(option_switches, defaults):
             opt[sw] = defaults[sw]
         else:
             opt[sw] = []
-    return opt   
+    return opt
 
 def parse_options(option_switches, default_opts, args, max_args=None):
     arguments = []
@@ -343,7 +343,7 @@ def parse_options(option_switches, default_opts, args, max_args=None):
             i += 1
         if len(o) == 2:
             i += 1
-            opt[sw] = args[i] 
+            opt[sw] = args[i]
         else:
             k = 1
             i += 1
