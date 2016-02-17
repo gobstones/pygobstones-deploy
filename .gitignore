@@ -1,0 +1,8 @@
+*.orig
+sources/pygobstones
+sources/gobstones
+sources/xgobstones
+sources/pygobstones-lang
+zip/
+bin/
+deb/
