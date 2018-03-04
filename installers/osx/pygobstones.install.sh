@@ -11,7 +11,7 @@ DEST_DIR=~/pygobstones
 echo "[PyGobstones] PyGobstones $PYGOBSTONES_VERSION installation started."
 echo "[PyGobstones] Installing dependencies"
 /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-brew install pyqt
+brew install cartr/qt4/pyqt
 brew install wget
 
 echo "[PyGobstones] Downloading PyGobstones files"
